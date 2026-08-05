@@ -1,0 +1,41 @@
+flowchart TD
+    A[Webcam Frame Captured] --> B[YOLOv8 Object Detection]
+    B --> C{Object Detected?}
+    C -- No --> A
+    C -- Yes --> D[Distance Estimation Module]
+
+    D --> D1[Known-size heuristic<br/>for person/door/chair etc.]
+    D --> D2[MiDaS relative depth<br/>for unknown-size objects]
+    D1 --> E[Assign Distance Band<br/>Red 3-5m / Green 5-10m / Blue 10m+]
+    D2 --> E
+
+    E --> F[Build Internal Object Cube<br/>class + size + position + distance]
+
+    F --> G[Motion Tracking - ByteTrack]
+    G --> H{Seen before in Memory Bank?}
+    H -- Yes --> H1[Update existing entry<br/>distance, speed, position]
+    H -- No --> H2[Create new memory entry]
+    H1 --> I[Object Memory Bank]
+    H2 --> I
+
+    I --> J{Object distance > 30-40m?}
+    J -- Yes --> K[Remove from Memory]
+    J -- No --> L[Keep Active]
+
+    L --> M[Egomotion Check<br/>Optical flow / feature displacement]
+    M --> N{User moved significantly?}
+    N -- Yes --> O[Trigger Re-scan Prompt<br/>Wipe stale memory]
+    N -- No --> P[Continue with current memory]
+
+    O --> Q[Voice: Ask user to look around]
+    P --> R[Decision Logic Layer]
+
+    R --> S{Object in user's path<br/>OR within Red zone<br/>OR moving toward user?}
+    S -- Yes --> T[Speak Alert<br/>e.g. 'person, 3 meters, ahead']
+    S -- No --> U[Stay Silent<br/>internal state only]
+
+    T --> A
+    U --> A
+
+    V[User asks 'which way?'] -.-> W[Path/Curve Detection]
+    W -.-> X[Speak Direction Guidance]
