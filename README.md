@@ -10,7 +10,7 @@ An AI-powered navigation aid that helps visually impaired users understand their
 
 ## Overview
 
-Visually impaired individuals rely on canes and guide dogs for physical navigation, but these tools offer no real-time awareness of moving hazards or unfamiliar surroundings ahead of time. This project combines object detection, monocular depth estimation, motion tracking, and lightweight object memory into a single real-time pipeline — using only a standard webcam or phone camera — to give users spoken, situational awareness of their environment as they move.
+Visually impaired individuals commonly rely on canes and guide dogs for navigation. While these aids provide effective real-time assistance, they have limitations in detecting and communicating information about distant or dynamically changing objects and unfamiliar surroundings. This project combines object detection, monocular depth estimation, motion tracking, and lightweight object memory into a single real-time pipeline— — using only a standard webcam or phone camera — to give users spoken, situational awareness of their environment as they move.
 
 This system is designed as a **supplement** to existing mobility aids, not a replacement.
 
