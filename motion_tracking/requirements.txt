@@ -1,0 +1,2 @@
+supervision>=0.24.0,<0.30.0
+numpy>=1.24
