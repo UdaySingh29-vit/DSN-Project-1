@@ -39,6 +39,7 @@ class VoiceListener:
             target=self._listen_loop,
             name="VoiceListenerThread",
             daemon=True
+            
         )
         self._worker_thread.start()
         
