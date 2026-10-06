@@ -33,11 +33,12 @@ This system is designed as a **supplement** to existing mobility aids, not a rep
 | Component | Tool/Library |
 |---|---|
 | Object detection | YOLOv8 (Ultralytics) |
-| Depth estimation | MiDaS |
-| Motion tracking | ByteTrack |
+| Depth estimation | MiDaS / Distance Heuristics |
+| Motion tracking | Custom Object Memory & Tracker |
 | Egomotion estimation | OpenCV optical flow (Lucas-Kanade) |
 | Text-to-speech | pyttsx3 |
 | Speech recognition | speech_recognition |
+| Web Dashboard | Flask, HTML, Vanilla CSS & JS |
 | Core language | Python |
 
 ---
@@ -61,14 +62,18 @@ See `/docs` for the full workflow diagram and interface contract detailing exact
 
 ## Project Structure
 
-```
-├── detection/          # Object detection module
-├── depth/               # Distance/depth estimation module
-├── tracking/            # Motion tracking & object memory module
-├── egomotion/            # User movement detection module
-├── decision/             # Decision logic & voice interface
-├── integration/           # Full pipeline integration
-├── docs/                # Workflow diagrams, interface contract, project docs
+```text
+├── app.py                     # Main Flask web server & application entry point
+├── detector_depth.py          # YOLOv8 object detection & smart distance logic
+├── decision_engine.py         # NLP keyword parsing & alert logic
+├── motion_tracker.py          # Custom motion tracking logic
+├── object_memory.py           # Object memory bank for persistence
+├── voice_listener.py          # Speech recognition and audio input
+├── speech_manager.py          # Text-to-speech manager for system voice
+├── static/                    # CSS and JavaScript for the web dashboard
+├── templates/                 # HTML templates for the web dashboard
+├── tests/                     # Test scripts and graph generators
+├── yolov8n.pt                 # YOLOv8 nano model weights
 └── README.md
 ```
 
@@ -77,13 +82,15 @@ See `/docs` for the full workflow diagram and interface contract detailing exact
 ## Setup
 
 ```bash
-git clone https://github.com/<your-username>/<repo-name>.git
-cd <repo-name>
-pip install -r requirements.txt
-python integration/main.py
+git clone https://github.com/UdaySingh29-vit/DSN-Project-1.git
+cd DSN-Project-1
+pip install flask ultralytics opencv-python pyttsx3 SpeechRecognition setuptools 
+
+# To run the local server and start the camera:
+python app.py
 ```
 
-*(Update this section with actual setup steps as the project develops.)*
+Once running, the AI pipeline will start in the background. Open your web browser and navigate to `http://127.0.0.1:5000` to view the Live System Dashboard!
 
 ---
 
@@ -116,9 +123,9 @@ python integration/main.py
 
 | Impact/Benefit | Description |
 |---|---|
-| *(to be added)* | |
-| *(to be added)* | |
-| *(to be added)* | |
+| **Independence** | Enables visually impaired users to safely navigate unknown environments without needing constant human assistance. |
+| **Silent Intelligence** | The system avoids overwhelming the user with constant narration. It only speaks up when something is approaching, in the direct path, or dangerously close. |
+| **Real-Time Responsiveness** | Built using the fast YOLOv8n model and optimized for high FPS so users can react instantly to dynamic environments. |
 
 ---
 
