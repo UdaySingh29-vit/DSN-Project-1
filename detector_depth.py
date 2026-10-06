@@ -2,6 +2,7 @@
 Module: Detection & Distance/Depth Estimation (Person 1)
 Role: Runs YOLOv8 detection and hybrid distance estimation (Pinhole + MiDaS relative depth),
       producing a standardized List[object_cube] conforming to the Stage 1 contract.
+      
 """
 
 import time
