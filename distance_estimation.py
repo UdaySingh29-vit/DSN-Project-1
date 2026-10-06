@@ -13,6 +13,7 @@ KNOWN_HEIGHTS = {
     "couch": 0.85,
     "tv": 0.5,
     "backpack": 0.45,
+    
 }
 
 def get_distance_band(distance_m):
