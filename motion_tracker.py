@@ -4,6 +4,7 @@ Motion Tracking module — Person 2, item #2 on the to-do list.
 Takes Person 1's per-frame `object_cube` list as input, runs ByteTrack to assign
 persistent track_ids, and computes motion_state / velocity_mps / direction from
 the distance_m history of each track.
+
 """
 
 from collections import deque, defaultdict
