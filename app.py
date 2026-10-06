@@ -19,6 +19,7 @@ system_status = {
     "fps": 0,
     "objects": [],
     "logs": []
+    
 }
 lock = threading.Lock()
 command_queue = []
