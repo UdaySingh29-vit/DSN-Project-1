@@ -1,5 +1,6 @@
 """Decision logic for the Real-Time Assistive Navigation System.
 Person 3 module.
+
 """
 
 from __future__ import annotations
