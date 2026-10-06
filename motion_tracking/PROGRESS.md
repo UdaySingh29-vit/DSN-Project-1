@@ -6,6 +6,7 @@ Project: Real-Time Assistive Navigation System (Team 195, DSN-1, VIT Bhopal)
 This documents everything done so far on the **Motion Tracking & Object Memory**
 half of my scope (egomotion is separate — see "Not started yet" below).
 
+
 ---
 
 ## To-do list progress
