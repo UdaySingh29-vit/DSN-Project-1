@@ -1,5 +1,6 @@
 """Thread-safe, non-blocking offline Text-to-Speech manager.
 Person 3 module.
+
 """
 
 from __future__ import annotations
