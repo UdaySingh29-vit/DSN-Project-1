@@ -142,4 +142,4 @@ Once running, the AI pipeline will start in the background. Open your web browse
 
 ## License
 
-*(Add your chosen license here — MIT is a common permissive choice for academic/exhibition projects.)*
+*"This project is licensed under the MIT License."*
