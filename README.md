@@ -136,8 +136,7 @@ Once running, the AI pipeline will start in the background. Open your web browse
 | YOLOv8 (Ultralytics) | https://docs.ultralytics.com/ |
 | MiDaS (Monocular Depth Estimation) | https://github.com/isl-org/MiDaS |
 | ByteTrack | https://github.com/ifzhang/ByteTrack |
-| *(add relevant papers/articles as you research further)* | |
-| *(add relevant papers/articles as you research further)* | |
+
 
 ---
 
