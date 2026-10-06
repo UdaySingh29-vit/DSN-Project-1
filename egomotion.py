@@ -1,6 +1,7 @@
 """
 Egomotion Detection module — Person 2.
 Uses OpenCV Lucas-Kanade optical flow to estimate camera movement.
+
 """
 
 import cv2
