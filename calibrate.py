@@ -1,7 +1,7 @@
 from ultralytics import YOLO
 import cv2
 
-model = YOLO("yolov8n.pt")
+model = YOLO("yolov8s.pt")
 cap = cv2.VideoCapture(0)
 
 KNOWN_DISTANCE_M = 2.0     # you will stand exactly this far from the camera

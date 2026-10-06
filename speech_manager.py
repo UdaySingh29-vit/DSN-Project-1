@@ -33,6 +33,7 @@ class SpeechManager:
         self.volume = volume
         self._queue: queue.Queue[Optional[_SpeechRequest]] = queue.Queue(maxsize=1)
         self._lock = threading.Lock()
+        self._queue_lock = threading.Lock()
         self._is_speaking = False
         self._stop_event = threading.Event()
         self._worker_thread: Optional[threading.Thread] = None
@@ -71,39 +72,44 @@ class SpeechManager:
 
         request = _SpeechRequest(priority, next(self._sequence), message.strip())
 
-        try:
-            pending = self._queue.get_nowait()
-        except queue.Empty:
-            pending = None
+        with self._queue_lock:
+            try:
+                pending = self._queue.get_nowait()
+            except queue.Empty:
+                pending = None
 
-        if pending is not None and pending.priority < request.priority:
-            chosen = pending
-        else:
-            chosen = request
+            if pending is not None and pending.priority < request.priority:
+                chosen = pending
+            else:
+                chosen = request
 
-        try:
-            self._queue.put_nowait(chosen)
-            return chosen is request
-        except queue.Full:
-            return False
+            try:
+                self._queue.put_nowait(chosen)
+                return chosen is request
+            except queue.Full:
+                return False
 
     def stop(self, timeout: float = 2.0) -> None:
         self._stop_event.set()
-        try:
-            while True:
-                self._queue.get_nowait()
-        except queue.Empty:
-            pass
+        with self._queue_lock:
+            try:
+                while True:
+                    self._queue.get_nowait()
+            except queue.Empty:
+                pass
 
-        try:
-            self._queue.put_nowait(None)
-        except queue.Full:
-            pass
+            try:
+                self._queue.put_nowait(None)
+            except queue.Full:
+                pass
 
         if self._worker_thread is not None:
             self._worker_thread.join(timeout=timeout)
 
     def _worker_loop(self) -> None:
+        import subprocess
+        import sys
+
         while not self._stop_event.is_set():
             try:
                 request = self._queue.get(timeout=0.2)
@@ -115,22 +121,16 @@ class SpeechManager:
 
             with self._lock:
                 self._is_speaking = True
+            
             try:
-                self._speak_blocking(request.message)
+                # Isolate pyttsx3 in a separate clean process to prevent PyTorch/OpenCV COM threading crashes
+                script = f"import pyttsx3; e=pyttsx3.init(); e.setProperty('rate', {self.rate}); e.setProperty('volume', {self.volume}); e.say({repr(request.message)}); e.runAndWait()"
+                
+                flags = subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0
+                subprocess.run([sys.executable, "-c", script], creationflags=flags)
+                
             except Exception as exc:
-                print(f"[SpeechManager] TTS error: {exc}")
+                print(f"[SpeechManager] TTS subprocess error: {exc}")
             finally:
                 with self._lock:
                     self._is_speaking = False
-
-    def _speak_blocking(self, message: str) -> None:
-        engine = None
-        try:
-            engine = pyttsx3.init()
-            engine.setProperty("rate", self.rate)
-            engine.setProperty("volume", self.volume)
-            engine.say(message)
-            engine.runAndWait()
-        finally:
-            if engine is not None:
-                engine.stop()

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drishti AI - Assistive Navigation</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="dashboard-container">
+        <header class="glass-panel">
+            <h1><span class="highlight">Drishti</span> AI Navigation System</h1>
+            <div class="status-indicator">
+                <span class="dot pulse"></span>
+                <span>System Active</span>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="video-container glass-panel">
+                <img src="{{ url_for('video_feed') }}" alt="Live Camera Feed" id="video-stream">
+                <div class="video-overlay">
+                    <span id="fps-counter">FPS: --</span>
+                </div>
+            </div>
+
+            <div class="side-panel">
+                <div class="controls glass-panel">
+                    <h2>Manual Commands</h2>
+                    <p>Trigger AI voice responses interactively</p>
+                    <button onclick="sendCommand('what is ahead')" class="btn primary">What is ahead?</button>
+                    <button onclick="sendCommand('which way is clear')" class="btn secondary">Which way is clear?</button>
+                    <button onclick="toggleMute()" id="mute-btn" class="btn" style="margin-top: 15px; background: #ef4444; color: white;">Unmute Auto-Alerts</button>
+                </div>
+
+                <div class="objects-panel glass-panel">
+                    <h2>Tracked Objects <span id="obj-count" class="badge">0</span></h2>
+                    <ul id="objects-list" class="styled-list">
+                        <!-- Populated by JS -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="logs-panel glass-panel">
+            <h2>Activity Log</h2>
+            <div id="logs-container" class="logs-container">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

@@ -4,7 +4,7 @@ import cv2
 model = YOLO("yolov8n.pt")
 cap = cv2.VideoCapture(0)
 
-FOCAL_LENGTH = 322# REPLACE with the number calibrate.py printed for you
+FOCAL_LENGTH = 388.3# REPLACE with the number calibrate.py printed for you
 
 # Average real-world heights (meters) for common classes - approximate, good enough for banding
 KNOWN_HEIGHTS = {
@@ -42,9 +42,23 @@ while True:
             pixel_height = y2 - y1
             real_height = KNOWN_HEIGHTS[class_name]
             if pixel_height > 0:
+                frame_h, frame_w = frame.shape[:2]
+                # Check if bounding box is cut off by the top or bottom of the frame
+                is_clipped = (y1 <= 10) or (y2 >= frame_h - 10)
+                
                 distance_m = (real_height * FOCAL_LENGTH) / pixel_height
+                
+                if is_clipped:
+                    # If you are so close your whole body doesn't fit, the true pixel height 
+                    # would be larger. This means true distance is less than calculated distance.
+                    # We estimate it's closer by a factor (e.g., 0.6)
+                    distance_m = distance_m * 0.6
+                    label = f"{class_name} {distance_m:.1f}m [CLIPPED]"
+                else:
+                    label = f"{class_name} {distance_m:.1f}m"
+
                 band, color = get_distance_band(distance_m)
-                label = f"{class_name} {distance_m:.1f}m [{band}]"
+                label += f" [{band}]"
             else:
                 color = (200, 200, 200)
                 label = class_name

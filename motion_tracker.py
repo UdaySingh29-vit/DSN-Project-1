@@ -44,17 +44,22 @@ class MotionTracker:
             class_id=class_ids,
         )
 
-        bbox_to_cube = {
-            tuple(round(v, 4) for v in obj["bbox"]): obj for obj in object_cubes
-        }
         tracked = self.tracker.update_with_detections(detections)
 
         results = []
         for i in range(len(tracked)):
             track_id = int(tracked.tracker_id[i])
-            output_bbox = tuple(round(v, 4) for v in tracked.xyxy[i].tolist())
-            source_obj = bbox_to_cube.get(output_bbox)
-            if source_obj is None:
+            out_box = tracked.xyxy[i]
+            
+            best_iou = -1.0
+            source_obj = None
+            for obj in object_cubes:
+                iou = self._compute_iou(out_box, obj["bbox"])
+                if iou > best_iou:
+                    best_iou = iou
+                    source_obj = obj
+
+            if source_obj is None or best_iou < 0.5:
                 continue
                 
             frame_id = source_obj["frame_id"]
@@ -111,6 +116,18 @@ class MotionTracker:
             return lateral_velocity, direction
 
         return radial_velocity, "stationary"
+
+    def _compute_iou(self, boxA: list | tuple | np.ndarray, boxB: list | tuple | np.ndarray) -> float:
+        xA = max(boxA[0], boxB[0])
+        yA = max(boxA[1], boxB[1])
+        xB = min(boxA[2], boxB[2])
+        yB = min(boxA[3], boxB[3])
+
+        interArea = max(0.0, float(xB - xA)) * max(0.0, float(yB - yA))
+        boxAArea = (boxA[2] - boxA[0]) * (boxA[3] - boxA[1])
+        boxBArea = (boxB[2] - boxB[0]) * (boxB[3] - boxB[1])
+
+        return interArea / float(boxAArea + boxBArea - interArea + 1e-6)
 
     def _expire_stale_tracks(self, active_ids) -> None:
         active_ids = set(int(i) for i in active_ids)

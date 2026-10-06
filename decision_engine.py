@@ -280,13 +280,38 @@ class DecisionEngine:
         text = (query_text or "").strip().lower()
         objects = tracked_objects if isinstance(tracked_objects, list) else []
 
-        if "which way" in text or "which side" in text or "clear" in text:
+        ahead_keywords = [
+            "what is ahead", "what's ahead", "what is in front of me", 
+            "what do you see"
+        ]
+        
+        clear_keywords = [
+            "which way is clear", "which side is clear", "is it clear", 
+            "where can i go", "safe path"
+        ]
+        
+        repeat_keywords = [
+            "repeat that", "repeat", "say again", "what did you say"
+        ]
+        
+        help_keywords = [
+            "what can i ask", "what can you do", "commands", "options"
+        ]
+
+        if any(kw in text for kw in clear_keywords) or "clear" in text:
             return self.which_way_is_clear(objects)
-        if "what is ahead" in text or text == "ahead":
+            
+        if any(kw in text for kw in ahead_keywords):
             return self.what_is_ahead(objects)
-        if "repeat" in text:
+            
+        if any(kw in text for kw in repeat_keywords):
             message = self._last_message or "There is nothing to repeat yet."
             return speech_action(message, 6, "user_query_response")
+            
+        if any(kw in text for kw in help_keywords):
+            help_message = "You can ask: what is ahead, which way is clear, or say repeat."
+            return speech_action(help_message, 6, "user_query_response")
+            
         return no_speech_action()
 
     def which_way_is_clear(self, tracked_objects: List[Dict[str, Any]]) -> Dict[str, Any]:

@@ -15,7 +15,7 @@ from ultralytics import YOLO
 class DetectionDepthEstimator:
     def __init__(
         self,
-        yolo_model_path: str = "yolov8n.pt",
+        yolo_model_path: str = "yolov8s.pt",
         focal_length: float = 800.0,
         enable_midas: bool = True,
         conf_threshold: float = 0.45,
@@ -33,10 +33,16 @@ class DetectionDepthEstimator:
             "couch": 0.85,
             "tv": 0.5,
             "backpack": 0.45,
+            "cell phone": 0.15,
+            "laptop": 0.35,
+            "bottle": 0.25,
+            "cup": 0.12,
+            "book": 0.25,
+            "remote": 0.2,
+            "dining table": 0.8,
+            "door": 2.0,
+            "car": 1.5,
         }
-
-        # History keyed by identifier (track_id or class_name fallback)
-        self.history: Dict[Any, deque] = {}
 
         # Load YOLOv8
         self.detector = YOLO(yolo_model_path)
@@ -65,20 +71,6 @@ class DetectionDepthEstimator:
         except Exception as e:
             print(f"[Warning] MiDaS failed to load ({e}). Falling back to geometric distance only.")
             self.enable_midas = False
-
-    def _compute_velocity(self, hist: deque) -> float:
-        """Calculates closing velocity (m/s). Negative = approaching."""
-        if len(hist) < 2:
-            return 0.0
-        diffs = []
-        items = list(hist)
-        for i in range(1, len(items)):
-            t0, d0 = items[i - 1]
-            t1, d1 = items[i]
-            dt = t1 - t0
-            if dt > 0:
-                diffs.append((d1 - d0) / dt)
-        return float(np.mean(diffs)) if diffs else 0.0
 
     def _get_distance_band(self, distance_m: float) -> str:
         """Returns distance band according to system schema: red | green | blue."""
@@ -147,47 +139,34 @@ class DetectionDepthEstimator:
         # 3. First Pass: Compute geometric distances for known classes
         for cand in candidates:
             c_name = cand["class_name"]
-            c_key = c_name  # Until track_id is provided by Person 2
-
-            if c_key not in self.history:
-                self.history[c_key] = deque(maxlen=self.history_len)
 
             cand["distance_m"] = None
             cand["distance_method"] = "unknown"
 
             if c_name in self.known_heights:
                 real_height = self.known_heights[c_name]
-                if not cand["is_clipped"] and cand["pixel_height"] > 0:
-                    distance_m = (real_height * self.focal_length) / cand["pixel_height"]
-                    cand["distance_m"] = round(distance_m, 2)
-                    cand["distance_method"] = "known_size"
-                    self.history[c_key].append((now, distance_m))
-
-                    # Collect anchor for MiDaS metric scaling
-                    if disparity_map is not None:
-                        x1, y1, x2, y2 = cand["bbox"]
-                        roi_disp = disparity_map[y1:y2, x1:x2]
-                        if roi_disp.size > 0:
-                            med_disp = float(np.median(roi_disp))
-                            if med_disp > 0:
-                                calibration_anchors.append(distance_m * med_disp)
-                else:
-                    # Extrapolation when edge-clipped
-                    hist = self.history[c_key]
-                    if len(hist) >= 2:
-                        last_time, last_distance = hist[-1]
-                        age = now - last_time
-                        if age <= self.max_extrapolation_age:
-                            vel = self._compute_velocity(hist)
-                            pred_dist = max(0.3, last_distance + vel * age)
-                            cand["distance_m"] = round(pred_dist, 2)
-                            cand["distance_method"] = "extrapolated"
-                        else:
-                            cand["distance_m"] = 0.8
-                            cand["distance_method"] = "extrapolated"
+                if cand["pixel_height"] > 0:
+                    upper_bound_dist = (real_height * self.focal_length) / cand["pixel_height"]
+                    
+                    if not cand["is_clipped"]:
+                        distance_m = upper_bound_dist
+                        cand["distance_m"] = round(distance_m, 2)
+                        cand["distance_method"] = "known_size"
+                        
+                        # Collect anchor for MiDaS metric scaling
+                        if disparity_map is not None:
+                            x1, y1, x2, y2 = cand["bbox"]
+                            roi_disp = disparity_map[y1:y2, x1:x2]
+                            if roi_disp.size > 0:
+                                med_disp = float(np.median(roi_disp))
+                                if med_disp > 0:
+                                    calibration_anchors.append(distance_m * med_disp)
                     else:
-                        cand["distance_m"] = 0.9
-                        cand["distance_method"] = "extrapolated"
+                        # If edge-clipped, the true height is larger than observed, 
+                        # so true distance is closer than the upper bound.
+                        # We use 0.6 as a factor (as determined in distance_estimation.py) for very close objects.
+                        cand["distance_m"] = round(upper_bound_dist * 0.6, 2)
+                        cand["distance_method"] = "known_size_clipped"
 
         # Update dynamic calibration scale factor
         if calibration_anchors:
@@ -214,8 +193,23 @@ class DetectionDepthEstimator:
                 
                 # Default safety fallback
                 if cand["distance_m"] is None:
-                    cand["distance_m"] = 6.0
-                    cand["distance_method"] = "unknown"
+                    inherited_dist = None
+                    c_x1, c_y1, c_x2, c_y2 = cand["bbox"]
+                    cx, cy = (c_x1 + c_x2) / 2, (c_y1 + c_y2) / 2
+                    
+                    for other in candidates:
+                        if other is not cand and other["distance_m"] is not None and other["distance_method"] != "unknown":
+                            ox1, oy1, ox2, oy2 = other["bbox"]
+                            if ox1 <= cx <= ox2 and oy1 <= cy <= oy2:
+                                inherited_dist = other["distance_m"]
+                                break
+                    
+                    if inherited_dist is not None:
+                        cand["distance_m"] = inherited_dist
+                        cand["distance_method"] = "inherited"
+                    else:
+                        cand["distance_m"] = 6.0
+                        cand["distance_method"] = "unknown"
 
         # 5. Build standard object_cube list and annotate frame
         object_cubes: List[Dict[str, Any]] = []
